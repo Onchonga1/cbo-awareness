@@ -20,7 +20,7 @@
                 <img src="{{ upload.media_file.url }}" class="card-img-top" alt="{{ upload.title }}" style="height: 250px; object-fit: cover;">
                 {% else %}
                 <div class="card-img-top bg-dark d-flex align-items-center justify-content-center" style="height: 250px;">
-                    <video width="100%" height="100%" controls>
+                    <video width="100%" height="100%" controls style="max-height: 250px;">
                         <source src="{{ upload.media_file.url }}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
@@ -39,5 +39,44 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- Pagination -->
+    {% if uploads.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if uploads.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ uploads.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Previous</span>
+            </li>
+            {% endif %}
+
+            {% for i in uploads.paginator.page_range %}
+                {% if uploads.number == i %}
+                <li class="page-item active">
+                    <span class="page-link">{{ i }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if uploads.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ uploads.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 {% endblock %}

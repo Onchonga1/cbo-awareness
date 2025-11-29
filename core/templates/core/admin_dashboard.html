@@ -4,93 +4,302 @@
 <div class="container-fluid py-4">
     <h2 class="mb-4">Admin Dashboard</h2>
     
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Media Uploads Management</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>User</th>
-                            <th>Type</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for upload in uploads %}
-                        <tr>
-                            <td>{{ upload.title }}</td>
-                            <td>{{ upload.user.username }}</td>
-                            <td>
-                                <span class="badge {% if upload.media_type == 'image' %}bg-success{% else %}bg-primary{% endif %}">
-                                    {{ upload.media_type }}
-                                </span>
-                            </td>
-                            <td>{{ upload.uploaded_at|date:"M d, Y" }}</td>
-                            <td>
-                                <form method="post" class="d-inline">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="delete_upload" value="{{ upload.id }}">
-                                    <button type="submit" class="btn btn-danger btn-sm" 
-                                            onclick="return confirm('Are you sure you want to delete this upload?')">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center">No uploads found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="uploads-tab" data-bs-toggle="tab" data-bs-target="#uploads" type="button" role="tab">
+                Media Uploads
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab">
+                Active Messages
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived" type="button" role="tab">
+                Archived Messages
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="adminTabsContent">
+        <!-- Uploads Tab -->
+        <div class="tab-pane fade show active" id="uploads" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Media Uploads Management</h5>
+                </div>
+                <div class="card-body">
+                    {% if uploads %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>User</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for upload in uploads %}
+                                <tr>
+                                    <td>{{ upload.title }}</td>
+                                    <td>{{ upload.user.username }}</td>
+                                    <td>
+                                        <span class="badge {% if upload.media_type == 'image' %}bg-success{% else %}bg-primary{% endif %}">
+                                            {{ upload.media_type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ upload.uploaded_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="delete_upload" value="{{ upload.id }}">
+                                            <button type="submit" class="btn btn-danger btn-sm" 
+                                                    onclick="return confirm('Are you sure you want to delete this upload?')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">No uploads found.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Contact Messages</h5>
+        <!-- Active Messages Tab -->
+        <div class="tab-pane fade" id="messages" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Active Messages ({{ active_messages.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_messages %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Subject</th>
+                                    <th>Message</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for message in active_messages %}
+                                <tr>
+                                    <td>{{ message.name }}</td>
+                                    <td>{{ message.email }}</td>
+                                    <td>{{ message.subject }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                data-bs-toggle="modal" data-bs-target="#messageModal{{ message.id }}"
+                                                onclick="markAsRead({{ message.id }})">
+                                            View Message
+                                        </button>
+                                    </td>
+                                    <td>{{ message.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span id="status-{{ message.id }}" class="badge 
+                                            {% if message.status == 'read' %}bg-success
+                                            {% elif message.status == 'unread' %}bg-warning
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ message.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="mark_read" value="{{ message.id }}">
+                                                <button type="submit" class="btn btn-success btn-sm" title="Mark as Read">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="archive_message" value="{{ message.id }}">
+                                                <button type="submit" class="btn btn-warning btn-sm" title="Archive">
+                                                    <i class="fas fa-archive"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="delete_message" value="{{ message.id }}">
+                                                <button type="submit" class="btn btn-danger btn-sm" 
+                                                        onclick="return confirm('Are you sure you want to delete this message?')" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Message Modal -->
+                                <div class="modal fade" id="messageModal{{ message.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Message from {{ message.name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p><strong>Subject:</strong> {{ message.subject }}</p>
+                                                <p><strong>Email:</strong> {{ message.email }}</p>
+                                                <p><strong>Date:</strong> {{ message.created_at|date:"M d, Y H:i" }}</p>
+                                                <hr>
+                                                <p><strong>Message:</strong></p>
+                                                <p style="white-space: pre-wrap;">{{ message.message }}</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">No active messages found.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Subject</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for message in contact_messages %}
-                        <tr>
-                            <td>{{ message.name }}</td>
-                            <td>{{ message.email }}</td>
-                            <td>{{ message.subject }}</td>
-                            <td>{{ message.created_at|date:"M d, Y" }}</td>
-                            <td>
-                                <span class="badge {% if message.is_read %}bg-success{% else %}bg-warning{% endif %}">
-                                    {% if message.is_read %}Read{% else %}Unread{% endif %}
-                                </span>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center">No messages found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+        <!-- Archived Messages Tab -->
+        <div class="tab-pane fade" id="archived" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Archived Messages ({{ archived_messages.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if archived_messages %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Subject</th>
+                                    <th>Message</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for message in archived_messages %}
+                                <tr>
+                                    <td>{{ message.name }}</td>
+                                    <td>{{ message.email }}</td>
+                                    <td>{{ message.subject }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                data-bs-toggle="modal" data-bs-target="#archivedModal{{ message.id }}">
+                                            View Message
+                                        </button>
+                                    </td>
+                                    <td>{{ message.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="restore_message" value="{{ message.id }}">
+                                                <button type="submit" class="btn btn-success btn-sm" title="Restore">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="delete_message" value="{{ message.id }}">
+                                                <button type="submit" class="btn btn-danger btn-sm" 
+                                                        onclick="return confirm('Are you sure you want to permanently delete this message?')" title="Delete Permanently">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Archived Message Modal -->
+                                <div class="modal fade" id="archivedModal{{ message.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Archived Message from {{ message.name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p><strong>Subject:</strong> {{ message.subject }}</p>
+                                                <p><strong>Email:</strong> {{ message.email }}</p>
+                                                <p><strong>Date:</strong> {{ message.created_at|date:"M d, Y H:i" }}</p>
+                                                <hr>
+                                                <p><strong>Message:</strong></p>
+                                                <p style="white-space: pre-wrap;">{{ message.message }}</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">No archived messages found.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function markAsRead(messageId) {
+    // Send AJAX request to mark message as read
+    fetch('/mark-message-read/' + messageId + '/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the status badge
+            const statusBadge = document.getElementById('status-' + messageId);
+            statusBadge.textContent = 'Read';
+            statusBadge.className = 'badge bg-success';
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Activate the correct tab based on URL hash
+document.addEventListener('DOMContentLoaded', function() {
+    const hash = window.location.hash;
+    if (hash) {
+        const trigger = document.querySelector(`[data-bs-target="${hash}"]`);
+        if (trigger) {
+            new bootstrap.Tab(trigger).show();
+        }
+    }
+});
+</script>
 {% endblock %}

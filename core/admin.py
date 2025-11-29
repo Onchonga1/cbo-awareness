@@ -9,6 +9,6 @@ class MediaUploadAdmin(admin.ModelAdmin):
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'subject', 'created_at', 'is_read']
-    list_filter = ['is_read', 'created_at']
+    list_display = ['name', 'email', 'subject', 'created_at', 'status']
+    list_filter = ['status', 'created_at']
     search_fields = ['name', 'email', 'subject', 'message']

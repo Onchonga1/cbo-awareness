@@ -7,25 +7,74 @@
             <h2 class="text-center mb-4">Upload Media</h2>
             <div class="card">
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>File Upload Guidelines:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Maximum file size: <strong>500MB</strong></li>
+                            <li>Supported images: JPEG, PNG, GIF, WebP</li>
+                            <li>Supported videos: MP4, MPEG, MOV, AVI, WMV, WebM</li>
+                            <li>Large files may take longer to upload</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label class="form-label">Title</label>
-                            <input type="text" name="title" class="form-control" required>
+                            <label class="form-label">Title *</label>
+                            <input type="text" name="title" class="form-control" required maxlength="200">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="3"></textarea>
+                            <textarea name="description" class="form-control" rows="3" maxlength="1000"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Media File (Image or Video)</label>
-                            <input type="file" name="media_file" class="form-control" accept="image/*,video/*" required>
+                            <label class="form-label">Media File (Image or Video) *</label>
+                            <input type="file" name="media_file" class="form-control" accept="image/*,video/*" required id="mediaFile">
+                            <div class="form-text">Choose an image or video file (max 500MB)</div>
+                            <div id="fileSizeWarning" class="text-warning mt-2" style="display: none;"></div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Upload</button>
+                        <button type="submit" class="btn btn-primary w-100" id="uploadButton">
+                            <i class="fas fa-upload"></i> Upload Media
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('mediaFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const warningDiv = document.getElementById('fileSizeWarning');
+    const uploadButton = document.getElementById('uploadButton');
+    
+    if (file) {
+        const fileSizeMB = file.size / (1024 * 1024);
+        
+        if (fileSizeMB > 500) {
+            warningDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> File too large (${fileSizeMB.toFixed(1)}MB). Maximum allowed is 500MB.`;
+            warningDiv.style.display = 'block';
+            warningDiv.className = 'text-danger mt-2';
+            uploadButton.disabled = true;
+        } else if (fileSizeMB > 100) {
+            warningDiv.innerHTML = `<i class="fas fa-info-circle"></i> Large file detected (${fileSizeMB.toFixed(1)}MB). Upload may take several minutes.`;
+            warningDiv.style.display = 'block';
+            warningDiv.className = 'text-warning mt-2';
+            uploadButton.disabled = false;
+        } else {
+            warningDiv.style.display = 'none';
+            uploadButton.disabled = false;
+        }
+    }
+});
+
+// Show loading state on form submit
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    const button = document.getElementById('uploadButton');
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    button.disabled = true;
+});
+</script>
 {% endblock %}
